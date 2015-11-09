@@ -1,7 +1,7 @@
 ---
 layout: post
-title: Samba server 
-description: Install and Setup Samba 
+title: Zabbix server 
+description: Install and Setup Zabbix 
 categories: Tools
 tags: Tools
 record_on: 2015-11-04
@@ -11,7 +11,123 @@ record_on: 2015-11-04
 
 <h3>1. 安装步骤</h3>
 <pre class="prettyprint lang-html">
+服务端
+    1  sudo apt-get update
+    
+    2  sudo apt-get install -y apache2 libapache2-mod-php5 php5-mysql libgd2-xpm-dev php5-gd build-essential mysql-server libmysqlclient-dev libcurl4-openssl-dev libsnmp-dev libssh2-1-dev
+    
+    3  sudo wget  http://jaist.dl.sourceforge.net/project/zabbix/ZABBIX%20Latest%20Stable/2.0.6/zabbix-2.0.6.tar.gz
+    
+    5  sudo tar -zxvf zabbix-2.0.6.tar.gz
+    
+    6  cd zabbix-2.0.6/
 
+    7 sudo groupadd unionpaysmart
+
+   8  sudo useradd -g unionpaysmart smart
+
+   9  sudo useradd -g unionpaysmart smart1
+
+   10  mysql -u root -p
+
+        create database zabbix character set utf8;
+        use zabbix database;
+
+   11  find / -name zabbix
+
+   12  cd zabbix-2.0.6/
+
+   13  cd database/
+
+   14  cd mysql/
+
+   15  mysql -u root -p zabbix < schema.sql
+
+   16  mysql -u root -p zabbix < images.sql
+
+   17  mysql -u root -p zabbix < data.sql
+
+   18  sudo ./configure --prefix=/usr/local/zabbix --enable-server --enable-agent --enable-ipv6 --with-mysql --with-net-snmp --with-libcurl --with-ssh2
+
+   19  dpkg -l |grep zabbix
+
+   20  sudo make install
+
+   21  sudo vim /usr/local/zabbix/etc/zabbix_server.conf
+     
+           修改：111  DBPassword=123456
+                 103  DBUser=root
+
+   22  cd /var/www/
+
+   23  sudo mkdir zabbix
+
+   24  cd zabbix-2.0.6/frontends/php
+
+   25  sudo cp -a . /var/www/zabbix/
+
+   26  ls /var/www/zabbix/
+
+   27  sudo chmod 777 /var/www/zabbix/conf
+
+   28  sudo vim /etc/php5/apache2/php.ini
+
+  修改：413： post_max_size = 32M
+        444： max_execution_time = 300
+        454： max_input_time = 300
+        633： date.timezone = PRC
+
+   29  sudo service apache2 restart
+
+   30  su smart
+
+   31 /usr/local/zabbix/sbin/zabbix_server start
+
+
+
+
+
+添加动作
+
+   44  netstat -ntlp
+   45  telnet 192.168.100.82 10050
+   46  ls
+   47  cd bin
+   48  ls
+   49  ./zabbix_get --help
+   50  ./zabbix_get -s 192.168.100.82 -k 'agent.ping'
+   51  ./zabbix_get -s 192.168.100.82 -k 'system.boottime'
+   52  ./zabbix_get -s 192.168.100.82 -k ''
+   53  ./zabbix_get -s 192.168.100.82 -k 'system.localtime'
+   54  ./zabbix_get -s 192.168.100.82 -k 'agent.version'
+
+
+
+   客户端
+
+    
+                              Agent Machine
+ sudo useradd zabbix 
+
+sudo mkdir /opt/zabbix_agents 
+
+cd /opt/zabbix_agents 
+
+sudo wget  http://www.zabbix.com/downloads/2.0.6/zabbix_agents_2.0.6.linux2_6_23.amd64.tar.gz sudo 
+
+tar zxvfzabbix_agents_2.0.6.linux2_6_23.amd64.tar.gz
+
+sudo vim conf/zabbix_agentd.conf
+
+Server=server IP 
+
+ServerActive=server IP 
+
+Hostname=Agent主机名
+
+sudo cp /opt/zabbix/conf/zabbix_agentd.conf /usr/local/etc/
+ 
+sudo /opt/zabbix/sbin/zabbix_agentd 
 </pre>
 
 
