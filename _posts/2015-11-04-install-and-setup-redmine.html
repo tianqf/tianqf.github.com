@@ -1,0 +1,198 @@
+---
+layout: post
+title: Install and Setup Redmine 
+description: Install and Setup Redmine 
+categories: Tools
+tags: Tools
+record_on: 2015-11-04
+---
+
+<p>Redmine 介绍</p>
+
+
+<h3>1. 安装步骤</h3>
+<pre class="prettyprint lang-html">
+服务端：
+    1  sudo apt-get update
+    
+    2  sudo apt-get install -y apache2 libapache2-mod-php5 php5-mysql libgd2-xpm-dev php5-gd build-essential mysql-server libmysqlclient-dev libcurl4-openssl-dev libsnmp-dev libssh2-1-dev
+    
+    3  sudo wget  http://jaist.dl.sourceforge.net/project/zabbix/ZABBIX%20Latest%20Stable/2.0.6/zabbix-2.0.6.tar.gz
+    
+    5  sudo tar -zxvf zabbix-2.0.6.tar.gz
+    
+    6  cd zabbix-2.0.6/
+
+    7 sudo groupadd unionpaysmart
+
+   8  sudo useradd -g unionpaysmart smart
+
+   9  sudo useradd -g unionpaysmart smart1
+
+   10  mysql -u root -p
+
+        create database zabbix character set utf8;
+        use zabbix database;
+
+   11  find / -name zabbix
+
+   12  cd zabbix-2.0.6/
+
+   13  cd database/
+
+   14  cd mysql/
+
+   15  mysql -u root -p zabbix < schema.sql
+
+   16  mysql -u root -p zabbix < images.sql
+
+   17  mysql -u root -p zabbix < data.sql
+
+   18  sudo ./configure --prefix=/usr/local/zabbix --enable-server --enable-agent --enable-ipv6 --with-mysql --with-net-snmp --with-libcurl --with-ssh2
+
+   19  dpkg -l |grep zabbix
+
+   20  sudo make install
+
+   21  sudo vim /usr/local/zabbix/etc/zabbix_server.conf
+     
+           修改：111  DBPassword=123456
+                 103  DBUser=root
+
+   22  cd /var/www/
+
+   23  sudo mkdir zabbix
+
+   24  cd zabbix-2.0.6/frontends/php
+
+   25  sudo cp -a . /var/www/zabbix/
+
+   26  ls /var/www/zabbix/
+
+   27  sudo chmod 777 /var/www/zabbix/conf
+
+   28  sudo vim /etc/php5/apache2/php.ini
+
+  修改：413： post_max_size = 32M
+        444： max_execution_time = 300
+        454： max_input_time = 300
+        633： date.timezone = PRC
+
+   29  sudo service apache2 restart
+
+   30  su smart
+
+   31 /usr/local/zabbix/sbin/zabbix_server start
+
+
+
+
+
+添加动作
+
+   44  netstat -ntlp
+   45  telnet 192.168.100.82 10050
+   46  ls
+   47  cd bin
+   48  ls
+   49  ./zabbix_get --help
+   50  ./zabbix_get -s 192.168.100.82 -k 'agent.ping'
+   51  ./zabbix_get -s 192.168.100.82 -k 'system.boottime'
+   52  ./zabbix_get -s 192.168.100.82 -k ''
+   53  ./zabbix_get -s 192.168.100.82 -k 'system.localtime'
+   54  ./zabbix_get -s 192.168.100.82 -k 'agent.version'
+
+服务端：
+ 
+                              Agent Machine
+ sudo useradd zabbix 
+
+sudo mkdir /opt/zabbix_agents 
+
+cd /opt/zabbix_agents 
+
+sudo wget  http://www.zabbix.com/downloads/2.0.6/zabbix_agents_2.0.6.linux2_6_23.amd64.tar.gz sudo 
+
+tar zxvfzabbix_agents_2.0.6.linux2_6_23.amd64.tar.gz
+
+sudo vim conf/zabbix_agentd.conf
+
+Server=server IP 
+
+ServerActive=server IP 
+
+Hostname=Agent主机名
+
+sudo cp /opt/zabbix/conf/zabbix_agentd.conf /usr/local/etc/
+ 
+sudo /opt/zabbix/sbin/zabbix_agentd 
+</pre>
+
+
+<h3>2. 配置信息</h3>
+<p>在 engine_demo 项目根目录下执行：</p>
+<pre class="prettyprint lang-html">
+rails plugin new blog --mountable
+</pre>
+<p>Engine blog 的目录结构与 food 有些不一样。见下面的截图：</p>
+
+
+<p><img src="/images/posts/mountable-engine.png" /></p>
+
+<p>下面实现一个blog 展示页面。
+看以下代码实例：</p>
+
+<pre class="prettyprint lang-html">
+# blog/app/controllers/blog/application_controller.rb
+module Blog
+  class ApplicationController < ActionController::Base
+  end
+end
+
+# blog/lib/blog.rb
+require "blog/engine"
+module Blog
+end
+
+# blog/lib/blog/engine.rb
+module Blog
+  class Engine < Rails::Engine
+    isolate_namespace Blog
+  end
+end
+
+# blog/app/controllers/blog/articles_controller.rb
+module Blog
+  class ArticlesController < Blog:: ApplicationController
+    def index
+    end
+  end
+end
+
+# blog/config/routes.rb
+Blog::Engine.routes.draw do
+  get "articles" => "articles#index"
+end
+
+# engine_demo/Gemfile
+gem 'blog', :path => "vendor/blog"
+
+# engine_demo/config/routes.rb
+EngineDemo::Application.routes.draw do
+  mount Blog::Engine => "/blog"
+end
+
+# engine_demo
+$ rake routes
+blog  /blog Blog::Engine
+
+Routes for Blog::Engine:
+articles GET /articles(.:format) blog/articles#index
+</pre>
+
+
+<p>
+  <b>参考链接</b><br />
+  <a href="http://www.ibm.com/developerworks/cn/cloud/library/1401_zhaoyi_openswitch/index.html" target="_blank">基于 Open vSwitch 的 OpenFlow 实践</a><br />
+  <a href="http://openvswitch.org/support/config-cookbooks/vlan-configuration-cookbook/" target="_blank">Isolating VM Traffic Using VLANs</a>
+</p>
