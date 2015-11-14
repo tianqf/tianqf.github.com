@@ -1,0 +1,187 @@
+---
+layout: post
+title: Zabbix server 
+description: Install and Setup Zabbix 
+categories: Tools
+tags: Tools
+record_on: 2015-11-04
+---
+
+<p>介绍</p>
+
+<h3>1. 安装步骤</h3>
+<pre class="prettyprint lang-html">
+    # sudo su -
+ 
+  1 # lsb_release -a
+
+  2 # sudo apt-get update
+  
+  3 # sudo apt-get -y install build-essential openssl libcurl4-openssl-dev libreadline6 libreadline6-dev curl mysql-server libmysqlclient-dev git-core libssl-dev libyaml-dev libxml2-dev libxslt-dev autoconf libc6-dev ncurses-dev automake libtool bison subversion pkg-config imagemagick libmagickwand-dev
+ 
+ 5 # gpg --keyserver hkp://keys.gnupg.net --recv-keys D39DC0E3
+ 
+ 6 # curl -L https://get.rvm.io | bash -s stable --ruby=2.0.0
+ 
+ 7 # source /usr/local/rvm/scripts/rvm
+
+ 8 # echo '[[ -s "/usr/local/rvm/scripts/rvm" ]] && source "/usr/local/rvm/scripts/rvm"' >> ~/.bashrc
+
+ 10 # gem sources --add https://ruby.taobao.org/ --remove https://rubygems.org/
+     
+ 11 # gem install passenger --no-ri --no-rdoc
+ 
+ 12 # passenger-install-nginx-module
+
+ 13 # sudo apt-get install -y git 
+
+ 14 # git clone git://github.com/jnstq/rails-nginx-passenger-ubuntu.git
+
+ 15 # mv rails-nginx-passenger-ubuntu/nginx/nginx /etc/init.d/nginx
+
+ 16 # chown root:root /etc/init.d/nginx
+ 
+ 17 # sudo vim /opt/nginx/conf/nginx.conf
+  
+       1：# user nobody;  取消注释，改为user www-data;
+
+       2: server {
+            listen  80;
+            server_name redminecrm.com;
+        root /var/data/redmine/public;
+          passenger_enabled on;
+            client_max_body_size      10m; # Max attachemnt size
+           }
+    删除大括弧里面的内容将以上内容覆盖进去。
+ 
+ 16 # sudo mkdir /var/data
+
+ 17 # cd /var/data
+
+ 18 # sudo apt-get install -y subversion
+
+ 19 # svn co http://svn.redmine.org/redmine/branches/2.2-stable redmine
+       
+ 20 # cp /var/data/redmine/config/database.yml.example database.yml 
+ 
+ 21 # vim database.yml
+       
+            production:
+                adapter: mysql2
+           database: redmine
+     host: localhost
+      username: redmine
+      password: redmine
+      encoding: utf8
+
+      development:
+      adapter: mysql2
+      database: redmine 
+      host: localhost
+      username: redmine
+      password: redmine
+      encoding: utf8
+ 22 # sudo apt-get install -y ruby-bundler
+
+ 23 #  rvm install ruby-1.9.3
+
+ 24 # gem install bundler
+ 
+ 25 #  bundle install
+ 
+ 26 #  gem install rack-test -v '0.6.3'
+
+ 27 # gem install actionmailer -v '3.2.13'
+ 
+ 28 #  sudo apt-get install -y libmysqlclient-dev
+
+ 29 #  gem install mysql2 -v '0.3.20'
+
+ 30 #  cd /var/data/redmine
+
+ 31 #  mkdir public/plugin_assets
+
+ 32 #  chown -R www-data:www-data files log tmp public/plugin_assets config.ru
+
+ 33 #  chmod -R 755 files log tmp public/plugin_assets
+
+ 34 #  mysql -u root -p
+     
+       create database redmine character set utf8;
+
+       CREATE user 'redmine'@'localhost' IDENTIFIED BY 'redmine';
+
+       GRANT ALL privileges ON redmine.* TO 'redmine'@'localhost';
+ 
+ 35 #  cd /var/data/redmine
+
+ 36 #  bundle exec rake db:migrate
+ 
+ 37 #  bundle exec rake redmine:plugins
+ 
+ 36 #  bundle exec rake generate_secret_token
+
+ 38 #  service nginx start
+ 
+ 39 # touch /var/data/redmine/tmp/restart.txt
+ 
+ 40 #  bundle exec ruby script/rails server webrick
+
+用户名：Admin
+passwd:admin
+
+
+
+排错一：
+
+  1：当服务器重启之后 必须从/var/data/redmine 目录下启动服务
+   #  bundle exec ruby script/rails server webrick
+
+  2：当系统报此错误之时/usr/lib/ruby/vendor_ruby/bundler/rubygems_ext.rb:8:in `require': no such file to load -- rubygems (LoadError)
+        from /usr/lib/ruby/vendor_ruby/bundler/rubygems_ext.rb:8
+        from /usr/lib/ruby/vendor_ruby/bundler.rb:11:in `require'
+        from /usr/lib/ruby/vendor_ruby/bundler.rb:11
+        from /usr/bin/bundle:4:in `require'
+        from /usr/bin/bundle:4
+     使用rvm list查看ruby使用版本
+   此时应当使用当时安装的版本
+    rvm rubies
+
+   ruby-1.9.3-p551 [ x86_64 ]
+=* ruby-2.0.0-p643 [ x86_64 ]
+
+# => - current
+# =* - current && default
+#  * - default
+
+然后使用此版本  # rvm use ruby-1.9.3-p551
+ #  bundle exec ruby script/rails server webrick
+
+
+添加用户和组 分别在图形界面操作
+
+
+邮件发送配置：
+cp /var/data/redmine/ configuration.yml.example configuration.yml
+vim configuration.yml
+ 
+     # Outgoing emails configuration (see examples above)
+  email_delivery:
+    delivery_method: :smtp
+    smtp_settings:
+      address: smtp.qiye.163.com
+      port: 25
+      domain: qiye.163.com
+      authentication: :login
+      user_name: "tianqf@unionpaysmart.com"
+      password: "911114Tqf"
+
+然后重启服务
+#  bundle exec ruby script/rails server webrick
+</pre>
+
+
+<p>
+  <b>参考链接</b><br />
+  <a href="http://www.redminecrm.com/boards/4/topics/448-installing-redmine-2-5-passenger-nginx-rvm-on-ubuntu-12-04-lts-and-14-04-lts" target="_blank">redmine setup and install for ubuntu server 12.04</a>
+</p>
