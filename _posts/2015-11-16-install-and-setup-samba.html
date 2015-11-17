@@ -1,19 +1,6 @@
----
-layout: post
-title:  Install and Setup Samba
-description: Install and Setup Samba 
-categories: Server
-tags: Server
-record_on: 2015-11-16
----
-
-<p>介绍</p>
-
-<h3>1. 安装步骤</h3>
-<pre class="prettyprint lang-html">
-    实 例一 :共 享一个 文件 夹 /common, SMB 服 务的 工作 组必 须是
-SMBtest 一个成员,/common 只能对 ex.com 域里的客户端使用。test
-用户可以读写访问/common,smb 用户密码是 
+实 例一 :共 享一个 文件 夹 /common, SMB 服 务的 工作 组必 须是
+SMBtest 一个成员,/common 只能对 ex.com 域里的客户端使用。wy
+用户可以读写访问/common,smb 用户密码是 P@33w0rd
 
 配置思路
 端 口 号 : 137/udp(netbios-ns),138/udp(netbios-dgm),139/udp(netbios-
@@ -21,7 +8,7 @@ dgm),139/tcp(netbios-ssn), 445/tcp(Microsoft-ds)
 包名: samba,samba-common,samba-client
 主配置文件: /etc/samba/smb.conf
 守护进程名: smb
-本地用户&&samba 用户: useradd test && smbapasswd –a test
+本地用户&&samba 用户: useradd wy && smbapasswd –a wy
 权限: service 写权限、filesystem 写权限、selinux 权限
 
 1:# nmtui 配置网卡 ip,配好 ip 保存
@@ -30,13 +17,13 @@ dgm),139/tcp(netbios-ssn), 445/tcp(Microsoft-ds)
 
 3:# ifconfig | grep inet 验证 ip 是否配置好
 
-4:# hostname test.ex.com 配置主机名(立即生效)
+4:# hostname wy.ex.com 配置主机名(立即生效)
 
-5:# echo test.ex.com > /etc/hostname 配置主机名(永久生效)
+5:# echo wy.ex.com > /etc/hostname 配置主机名(永久生效)
 
 6:# cat /etc/hostname 验证是否主机名配置
 
-7:# echo 172.16.7.1 test.ex.com >> /etc/hosts 在 hosts 文件中追加一行,能够解析这台主机
+7:# echo 172.16.7.1 wy.ex.com >> /etc/hosts 在 hosts 文件中追加一行,能够解析这台主机
 
 8:# rpm –q samba samba-client samba-common 查包看是否已经安装
 
@@ -44,15 +31,15 @@ dgm),139/tcp(netbios-ssn), 445/tcp(Microsoft-ds)
 
 10:# mkdir /common 创建 common 目录
 
-11:# useradd test 添加用户 test
+11:# useradd wy 添加用户 wy
 
-12:# smbpasswd –a test 添加 samba 用户,要求输入 2 次密码,密码是不可见的
+12:# smbpasswd –a wy 添加 samba 用户,要求输入 2 次密码,密码是不可见的
 
 13:# pdbedit –L 确认已经创建好 smb 用户
 
 14:# ls –ld /common 可以看出 /common 文件夹的权限,所以 wy 这个用户默认没有写入权限
 
-15:# setfacl –m u:test:rwx /common 为了安装所以就用 acl 控制只给 wy 这个用户 rwx 权限,并且用 getfacl 查看权限
+15:# setfacl –m u:wy:rwx /common 为了安装所以就用 acl 控制只给 wy 这个用户 rwx 权限,并且用 getfacl 查看权限
 
 16:# ls –ldZ /common 查看 selinux 的目录权限
 
@@ -68,11 +55,11 @@ dgm),139/tcp(netbios-ssn), 445/tcp(Microsoft-ds)
 20:# vim /etc/samba/smb.conf 修改配置文件
 
         workgroup = SMBtest
-  hosts allow = 172.16.
-  [common]
-  path = /common
-  browseable = yes
-  writab = yes
+	hosts allow = 172.16.
+	[common]
+	path = /common
+	browseable = yes
+	writab = yes
 
 21:# service smb restart 重启 samba 服务
 
@@ -98,9 +85,30 @@ windows:
 
   Win+R 输入172.16.7.1
 
-</pre>
 
-<p>
-  <b>参考链接</b><br />
-  <a href="http://wenku.baidu.com/view/0cd5be73941ea76e58fa04b2.html?from=search" target="_blank">Samba server setup and install for rhel7,centos 7  </a>
-</p>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
