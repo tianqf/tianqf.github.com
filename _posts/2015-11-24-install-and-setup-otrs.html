@@ -1,0 +1,109 @@
+---
+layout: post
+title:  Install and Setup OTRS
+description: Install and Setup OTRS 
+categories: Server
+tags: Server
+record_on: 2015-11-24
+---
+
+<p>介绍</p>
+
+<h3>1. 安装步骤</h3>
+<p>
+<pre class="prettyprint lang-html">
+    
+    1  sudo apt-get update
+
+    2  sudo apt-get install -y apache2 mysql-server
+
+    3  cd /opt/
+
+    4  sudo wget http://ftp.otrs.org/pub/otrs/otrs-3.2.9.tar.gz
+
+    5  sudo tar -zxvf otrs-3.2.9.tar.gz 
+  
+    6  sudo mv otrs-3.2.9 /opt/otrs
+
+    7  cd /opt/otrs/
+
+    8 ls
+
+    9  bin/otrs-3.2.9 /opt/otrs
+
+    10  bin/otrs.CheckModules.pl
+
+    11  sudo apt-get install liblwp-useragent-determined-perl libapache2-mod-perl2 libnet-dns-perl libnet-smtp-ssl-perl libnet-smtp-tls-butmaintained-perl libyaml-perl
+
+    12  sudo apt-get install libgd-text-perl libjson-xs-perl libpdf-api2-perl libtext-csv-xs-perl libxml-parser-perl
+
+    13  bin/otrs.CheckModules.pl
+
+    14  useradd -d /opt/otrs/ -c 'OTRS user' otrs
+
+    15  sudo useradd -d /opt/otrs/ -c 'OTRS user' otrs
+
+    16  usermod -G www-data otrs
+
+    17  sudo usermod -G www-data otrs
+
+    18  ls
+
+    19  cd Kernel/
+
+    20  ls
+
+    21  cp Config.pm.dist Config.pm
+
+    22  sudo cp Config.pm.dist Config.pm
+
+    23  ls
+
+    24  cd Config/
+
+    25  ls
+
+    26  sudo cp GenericAgent.pm.dist GenericAgent.pm
+
+    27  cd ..
+
+    28  perl -cw /opt/otrs/bin/cgi-bin/index.pl
+
+    29  perl -cw /opt/otrs/bin/cgi-bin/customer.pl
+
+    30  perl -cw /opt/otrs/bin/otrs.PostMaster.pl
+
+    31  bin/otrs.SetPermissions.pl --otrs-user=otrs --web-user=www-data --otrs-group=www-data --web-group=www-data /opt/otrs
+
+    32  sudo bin/otrs.SetPermissions.pl --otrs-user=otrs --web-user=www-data --otrs-group=www-data --web-group=www-data /opt/otrs
+
+    33  ls -al /opt/otrs
+
+    34  ln -s /opt/otrs/scripts/apache2-httpd.include.conf /etc/apache2/sites-available/otrs
+
+    35  sudo ln -s /opt/otrs/scripts/apache2-httpd.include.conf /etc/apache2/sites-available/otrs
+
+    36  a2ensite otrs
+
+    37  sudo a2ensite otrs
+
+    38  cd /usr/sbin/
+ 
+    39  sudo chown -hR smart apache2ctl
+
+    40 ls -la |grep apache2ctl
+
+    41  cd /opt/otrs/
+
+    42  sudo chmod 777 /usr/sbin/apache2ctl 
+  
+    43  sudo service apache2 restart
+
+登陆：http://192.168.88.246/otrs/index.pl
+
+用户名：root@localhost
+密码：root
+</pre>
+ <b>参考链接</b><br />
+  <a href="http://www.it2admin.com/2014/08/otrs-helpdesk-on-ubuntu-1204-64-bit.html" target="_blank">OTRS setup and install for ubuntu server 12.04</a>
+</p>
