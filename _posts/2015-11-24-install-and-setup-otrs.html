@@ -83,21 +83,19 @@ record_on: 2015-11-24
 
     35  sudo ln -s /opt/otrs/scripts/apache2-httpd.include.conf /etc/apache2/sites-available/otrs
 
-    36  a2ensite otrs
+    36  sudo a2ensite otrs
 
-    37  sudo a2ensite otrs
-
-    38  cd /usr/sbin/
+    37  cd /usr/sbin/
  
-    39  sudo chown -hR smart apache2ctl
+    38  sudo chown -hR smart apache2ctl
 
-    40 ls -la |grep apache2ctl
+    39  ls -la |grep apache2ctl
 
-    41  cd /opt/otrs/
+    40  cd /opt/otrs/
 
-    42  sudo chmod 777 /usr/sbin/apache2ctl 
+    41  sudo chmod 777 /usr/sbin/apache2ctl 
   
-    43  sudo service apache2 restart
+    42  sudo service apache2 restart
 
 登陆：http://192.168.88.246/otrs/index.pl
 
@@ -105,5 +103,5 @@ record_on: 2015-11-24
 密码：root
 </pre>
  <b>参考链接</b><br />
-  <a href="http://www.it2admin.com/2014/08/otrs-helpdesk-on-ubuntu-1204-64-bit.html" target="_blank">OTRS setup and install for ubuntu server 12.04</a>
+  <a href="OTRS setup and install for ubuntu server 12.04" target="_blank">http://www.it2admin.com/2014/08/otrs-helpdesk-on-ubuntu-1204-64-bit.html</a>
 </p>
