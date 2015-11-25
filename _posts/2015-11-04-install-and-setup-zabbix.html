@@ -23,12 +23,6 @@ record_on: 2015-11-04
     
     6  cd zabbix-2.0.6/
 
-    7 sudo groupadd unionpaysmart
-
-   8  sudo useradd -g unionpaysmart smart
-
-   9  sudo useradd -g unionpaysmart smart1
-
    10  mysql -u root -p
 
         create database zabbix character set utf8;
@@ -127,72 +121,6 @@ sudo cp /opt/zabbix/conf/zabbix_agentd.conf /usr/local/etc/
  
 sudo /opt/zabbix/sbin/zabbix_agentd 
 </pre>
-
-
-<h3>2. 配置信息</h3>
-<p>在 engine_demo 项目根目录下执行：</p>
-<pre class="prettyprint lang-html">
-rails plugin new blog --mountable
-</pre>
-<p>Engine blog 的目录结构与 food 有些不一样。见下面的截图：</p>
-
-
-<p><img src="/images/posts/mountable-engine.png" /></p>
-
-<p>下面实现一个blog 展示页面。
-看以下代码实例：</p>
-
-<pre class="prettyprint lang-html">
-# blog/app/controllers/blog/application_controller.rb
-module Blog
-  class ApplicationController < ActionController::Base
-  end
-end
-
-# blog/lib/blog.rb
-require "blog/engine"
-module Blog
-end
-
-# blog/lib/blog/engine.rb
-module Blog
-  class Engine < Rails::Engine
-    isolate_namespace Blog
-  end
-end
-
-# blog/app/controllers/blog/articles_controller.rb
-module Blog
-  class ArticlesController < Blog:: ApplicationController
-    def index
-    end
-  end
-end
-
-# blog/config/routes.rb
-Blog::Engine.routes.draw do
-  get "articles" => "articles#index"
-end
-
-# engine_demo/Gemfile
-gem 'blog', :path => "vendor/blog"
-
-# engine_demo/config/routes.rb
-EngineDemo::Application.routes.draw do
-  mount Blog::Engine => "/blog"
-end
-
-# engine_demo
-$ rake routes
-blog  /blog Blog::Engine
-
-Routes for Blog::Engine:
-articles GET /articles(.:format) blog/articles#index
-</pre>
-
-
-<p>
-  <b>参考链接</b><br />
-  <a href="http://www.ibm.com/developerworks/cn/cloud/library/1401_zhaoyi_openswitch/index.html" target="_blank">基于 Open vSwitch 的 OpenFlow 实践</a><br />
-  <a href="http://openvswitch.org/support/config-cookbooks/vlan-configuration-cookbook/" target="_blank">Isolating VM Traffic Using VLANs</a>
+<b>参考链接</b><br />
+<a href="zabbix setup and install for ubuntu server 12.04" target="_blank">http://work.unionpaysmart.com/projects/operations/wiki/Zabbi</a>
 </p>
