@@ -1,0 +1,64 @@
+---
+layout: post
+title:  create-sandbox-environment
+description: create-sandbox-environment
+categories: Tools
+tags: Tools
+record_on: 2015-12-08
+---
+
+<p>介绍</p>
+
+<h3>1. 安装步骤</h3>
+<pre class="prettyprint lang-html">
+要求：物理机为ubuntu12.04server
+     下载并安装virtualbox 
+     下载并安装vagrant
+1：创建目录：mkdir ~/cookbook
+2:在cookbook目录下面配置Vagrantfile文件，加入以下配置：
+ 
+    nodes = {
+          'controller'  =>  [1,200],
+}
+Vagrant.configure("2") do |config|
+   config.vm.box = "precise64"
+   config.vm.box_url = "http://files.vagrantup.com/precise64.box"
+
+ # Foresout NAC workaround 
+  config.vm.usable_port_range = 2800..2900
+    nodes.each do |prefix, (count,ip_start)|
+      count.times do |i|
+        hostname = "%s" % [prefix,(i+1)]
+
+config.vm.define "#{hostname}" do |box|
+      box.vm.hostname = "#{hostname}.book"
+      box.vm.network :private_network,ip:
+          "172.16.0.#{ip_start+i}", :netmask =>"255.255.0.0"
+      box.vm.network :private_network, ip:
+          "10.10.0.#"{ip_start+i}", :netmask =>"255.255.0.0"
+       box.vm..network :private_network, ip:
+           "192.168.100.#{ip_start+i}", :netmask =>"255.255.255.0"
+
+     # Otherwise using Virtualbox
+          box.vm.provider :virtualbox do |vbox|
+      #Defaults
+           vbox.customize ["modifyvm", :id, "--memory",2048]
+           vbox.customize ["modifyvm", :id, "--cpus",1]
+                        end
+                  end
+            end
+       end
+end
+
+完成以上配置
+vagrant up controller   
+
+vagrant ssh controller
+
+</pre>
+
+
+<p>
+  <b>参考链接</b><br />
+  <a href="http://www.redminecrm.com/boards/4/topics/448" target="_blank">create-sandbox-environmentfor ubuntu server 12.04</a>
+</p>
