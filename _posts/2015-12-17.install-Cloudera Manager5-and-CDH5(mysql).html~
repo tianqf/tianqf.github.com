@@ -144,5 +144,5 @@ grant all on hive.* TO 'hive'@'CDH' IDENTIFIED BY 'hive_password';
 
 <p>
   <b>参考链接</b><br />
-  <a href="http://www.redminecrm.com/boards/4/topics/448" target="_blank">create-sandbox-environmentfor ubuntu server 12.04</a>
+  <a href="http://www.redminecrm.com/boards/4/topics/448" target="_blank">http://www.aboutyun.com/thread-9107-1-1.html</a>
 </p>
