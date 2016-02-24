@@ -1,0 +1,92 @@
+---
+layout: post
+title:  Centos network setup
+description: Centos network setup 
+categories:  Command
+tags:  Command
+record_on: 2016-02-24
+---
+
+<p>介绍</p>
+
+<h3>1. 安装步骤</h3>
+<pre class="prettyprint lang-html">
+ 1.编辑网卡文件
+vi /etc/sysconfig/network-scripts/ifcfg-eth0
+设置网卡eth0的IPV4信息，需要注意的是，设置的IPADDR需要和局域网中其他机器处于同一网段。需设置容如下：
+DEVICE=eth0
+BOOTPROT=static
+IPADDR=192.168.1.101
+GATEWAY=192.168.1.1
+NETMASK=255.255.255.0
+ONBOOT=yes
+网卡文件内容示例说明：
+
+DEVICE=eth0                 //指出设备名称
+BOOTPROT=static             //启动类型 dhcp|static
+BROADCAST=192.168.1.203     //广播地址
+HWADDR=00:06:5B:FE:DF:7C    //硬件Mac地址
+IPADDR=192.168.0.2          //IP地址
+NETMASK=255.255.255.0       //子网掩码
+NETWORK=192.168.0.0         //网络地址
+GATEWAY=192.168.0.1         //网关地址
+ONBOOT=yes                  //是否启动应用
+TYPE=Ethernet               //网络类型
+2、重启网卡
+
+service network restart
+重启网卡时，shell中可能会有重新配置IP的相关信息出现在shell中。
+
+3、通过ping局域网中其他主机的IP来测试配置是否成功
+
+ping 192.168.1.10
+
+
+配置DNS
+
+编辑/etc/resolv.conf文件
+nameserver 202.96.128.86
+nameserver 202.96.128.166
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+
+
+
+4、配置防火墙，开启80端口、3306端口
+vi /etc/sysconfig/iptables
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 80 -j ACCEPT（允许80端口通过防火墙）
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 3306 -j ACCEPT（允许3306端口通过防火墙）
+特别提示：很多网友把这两条规则添加到防火墙配置的最后一行，导致防火墙启动失败，正确的应该是添加到默认的22端口这条规则的下面
+添加好之后防火墙规则如下所示：
+#########################################################
+# Firewall configuration written by system-config-firewall
+# Manual customization of this file is not recommended.
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -mstate --state NEW -m tcp -p tcp --dport 80 -j ACCEPT
+-A INPUT -mstate --state NEW -m tcp -p tcp --dport 3306 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+#########################################################
+/etc/init.d/iptables restart  #最后重启防火墙使配置生效
+
+5、关闭SELINUX
+vi /etc/selinux/config
+#SELINUX=enforcing       #注释掉
+#SELINUXTYPE=targeted    #注释掉
+SELINUX=disabled         #增加
+
+</pre>
+
+
+<p>
+  <b>参考链接</b><br />
+  <a href="" target="_blank">network setup on Centos system</a>
+</p>
