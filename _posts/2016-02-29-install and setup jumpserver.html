@@ -1,0 +1,285 @@
+---
+layout: post
+title:  Centos 6.5 install and setup jumpserver
+description: Centos 6.5 install and setup jumpserver
+categories:  Tools
+tags:  Tools
+record_on: 2016-02-29
+---
+
+<p>介绍</p>
+
+<h3>1. 安装步骤</h3>
+<pre class="prettyprint lang-html">
+环境说明：
+Centos6.5 mini , iptables, selinux关闭
+jumpserver: 192.168.20.130
+测试机testserver: 192.168.20.131
+相关软件包下载地址:http://pan.baidu.com/s/1gekIiMv
+
+
+一. 部署ldapserver
+
+1.1 安装ldapserver
+# rpm -ivh http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm 
+# yum install -y vim automake autoconf gcc xz ncurses-devel  patch python-devel git python-pip gcc-c++  # 安装基本环境，后面依赖
+# yum install -y openldap openldap-servers openldap-clients openldap-devel
+
+1.2 准备配置文件
+# cp /usr/share/openldap-servers/slapd.conf.obsolete /etc/openldap/slapd.conf   
+  ## 该文件是slapd的配置文件 
+# cp /usr/share/openldap-servers/DB_CONFIG.example /var/lib/ldap/DB_CONFIG      
+  ## 数据库的配置文件
+
+1.3 修改配置文件# vim /etc/openldap/slapd.conf
+  ... 
+  loglevel        1
+  ...
+  suffix          "dc=jumpserver,dc=org"
+  rootdn          "cn=admin,dc=jumpserver,dc=org"
+  rootpw          secret234
+  ...
+  #说明：
+  loglevel：设置日志级别  suffix：其实就是BaseDN
+  rootdn: 超级管理员的dn
+  rootpw: 超级管理员的密码  
+
+1.4 修改系统日志配置文件
+# vim /etc/rsyslog.conf
+  local4.*          /var/log/ldap.log   
+  # local7.*下添加一行
+# service rsyslog restart
+
+1.5 启动slapd, 查看启动情况
+# service slapd start
+# rm -rf /etc/openldap/slapd.d/*
+# slaptest -f /etc/openldap/slapd.conf -F /etc/openldap/slapd.d 
+# chown -R ldap:ldap /etc/openldap/slapd.d/
+# service slapd restart
+# netstat -tulnp | grep slapd
+  #说明：第一次启动生会初始化ldap数据库，在/var/lib/ldap中，如果想删除ldap数据库就删除该目录，保留DB_CONFIG配置文件。新版的ldap使用的是/etc/openldap/slapd.d 下的配置文件，删除原来的配置文件，slaptest是重新生成新的配置文件
+
+1.6 导入ldif数据库框架和测试用户，可以使用migrationtools导出框架，也可以用我导出好的. 
+base.ldif,group.ldif,passwd.ldif 将其中的dc=jumpserver,dc=org替换成你的baseDN,然后导入,密码是rootpw设置的 secret234  这些文件百度云中下载  http://pan.baidu.com/s/1i3kne6p
+# ldapadd -x -W -D "cn=admin,dc=jumpserver,dc=org" -f base.ldif
+# ldapadd -x -W -D "cn=admin,dc=jumpserver,dc=org" -f group.ldif
+# ldapadd -x -W -D "cn=admin,dc=jumpserver,dc=org" -f passwd.ldif
+
+二. testserver部署ldapclient
+--- CentOS6设置 ---
+
+2.1 安装LDAP客户端
+# yum -y install openldap openldap-clients nss-pam-ldapd pam_ldap 
+
+2.2 设置自动创建目录
+# echo "session required pam_mkhomedir.so skel=/etc/skel umask=0077" >> /etc/pam.d/system-auth 
+
+2.3 备份原来authconfig,然后设置使用LDAP认证
+# authconfig --savebackup=auth.bak
+# authconfig --enableldap --enableldapauth --enablemkhomedir --enableforcelegacy --disablesssd --disablesssdauth --ldapserver=192.168.20.130 --ldapbasedn="dc=jumpserver,dc=org" --update
+
+2.4 从jumpserver连接testuser测试# ssh testuser@192.168.20.131
+  # 密码是testuser123 如果连接成功则继续
+生产中部署注意建立灾备账户这里就不再说明
+
+三. LDAP负责sudo
+
+3.1 拷贝sudo schema，centos版本不一样，可能sudo的版本不是1.8.6，其他的也可以
+# cp /usr/share/doc/sudo-1.8.6p3/schema.OpenLDAP /etc/openldap/schema/sudo.schema
+
+3.2 修改文件导入schema# vim /etc/openldap/slapd.conf　
+  include         /etc/openldap/schema/sudo.schema
+
+3.3 重新生成配置文件，重启slapd
+# rm -rf /etc/openldap/slapd.d/*
+# slaptest -f /etc/openldap/slapd.conf -F /etc/openldap/slapd.d
+# chown -R ldap:ldap /etc/openldap/slapd.d/* 
+# service slapd restart
+
+3.4 导入sudo.ldif到ldapserver
+# ldapadd -x -W -D "cn=admin,dc=jumpserver,dc=org" -f sudo.ldif
+  #说明：将sudo.ldif中的dc=jumpserver,dc=org换作你的baseDN
+
+3.5 testserver设置sudo使用ldap
+  说明: centos6上sudo-1.7.4p5的使用的ldap配置文件是 /etc/sudo-ldap.conf，sudo版本不同使用的配置文件可能也有所不同，sudo -V | grep 'ldap.conf' 查看
+# sudo -V | grep 'ldap.conf'   
+...
+ldap.conf path: /etc/sudo-ldap.conf  # 已知有的版本是 /etc/nslcd.conf，下面应该做出对应改变...
+--- CentOS6 ---
+# echo -e "uri ldap://192.168.20.130\nSudoers_base ou=Sudoers,dc=jumpserver,dc=org" > /etc/sudo-ldap.conf 
+# echo "Sudoers: files ldap" >>  /etc/nsswitch.conf
+--- CentOS5 ---
+# echo "Sudoers_base ou=Sudoers,dc=jumpserver,dc=org" >> /etc/ldap.conf
+# echo "Sudoers: files ldap" >> /etc/nsswitch.conf
+
+3.6 测试sudo
+# ssh testuser@192.168.20.131
+# sudo su 
+  #说明：密码是testuser123，sudo su如果不提示输入密码，则成功
+
+3.7 删除测试用户
+# ldapdelete -x -D "cn=admin,dc=jumpserver,dc=org" -w secret234 "uid=testuser,ou=People,dc=jumpserver,dc=org"
+# ldapdelete -x -D "cn=admin,dc=jumpserver,dc=org" -w secret234 "cn=testuser,ou=Sudoers,dc=jumpserver,dc=org"
+
+四. 部署jumpserver
+
+4.1 安装mysql数据库，创建库
+# yum -y install mysql mysql-server mysql-devel
+# service mysqld start
+# mysql
+mysql> create database jumpserver charset='utf8';
+mysql> grant all on jumpserver.* to 'jumpserver'@'127.0.0.1' identified by 'mysql234';
+
+4.2 下载最新Jumpserver项目
+# cd /opt
+# git clone https://github.com/ibuler/jumpserver.git 
+# cd jumpserver
+
+4.3 安装依赖模块
+# cd /opt/jumpserver/docs
+# rm -rf /usr/lib64/python2.6/site-packages/Crypto # 不是mini安装，默认带的版本不兼容
+# pip install -r requirements.txt 
+#  说明：如果报错请手动安装每个模块4.4 修改Jumpserver配置文件 
+# cd ..
+# vim jumpserver.conf
+    #coding: utf8
+    [base]
+    ip = 192.168.20.130
+    port = 80
+    key = 88aaaf7ffe3c6c04
+
+    [db]
+    host = 127.0.0.1
+    port = 3306
+    user = jumpserver
+    password = mysql234
+    database = jumpserver
+
+    [ldap]
+    ldap_enable = 1
+    host_url = ldap://127.0.0.1:389
+    base_dn = dc=jumpserver, dc=org
+    root_dn = cn=admin,dc=jumpserver,dc=org
+    root_pw = secret234
+
+    [websocket]
+    web_socket_host = 192.168.20.130:3000
+
+    [mail]
+    email_host = smtp.exmail.qq.com
+    email_port = 25
+    email_host_user = noreply@jumpserver.org
+    email_host_password = jumpserver123
+    email_use_tls = False
+    # 说明：
+    # [base] ip, port是访问web的ip和端口号, key是用来加密的随机字符串，如果更改请确保是16位
+    # [db]里是数据库的设置，相信你看一眼就知道了
+    # [ldap] ldap_enable启用ldap, host_url是ldapserver的地址， base_dn root_dn root_pw与前面配置的ldapserver保持一致 
+    # [websocket] websocket的地址，是允许node index.js程序的服务器地址，通常和web运行在一起，端口号默认是 3000
+    # [mail] 配置mail服务器，用来发送邮件，本版本添加用户会自动发邮件给用户的email
+
+4.5 建立logs目录并修改权限
+# cd /opt/jumpserver/
+# mkdir logs; chmod 777 logs
+
+4.6 django sync db 到数据库
+# python manage.py syncdb 
+  Would you like to create one now? (yes/no): no
+
+4.7 测试运行
+# python manage.py runserver 0.0.0.0:80 
+# cd /opt/jumpserver/
+# python log_handler.py
+  #说明：两个窗口分别打开
+
+4.8 初始化jumpserver浏览器打开 
+http://192.168.1.209/install
+显示安装成功测继续
+
+五. 安装node.js
+为了实现实时监控，使用了node.js来完成websocket
+
+5.1 yum安装node.js 
+# yum -y install nodejs npm  # 好多依赖啊
+# cd websocket
+# npm install
+  #说明：可能下载需要几分钟，也可以使用我已经下载好的模块，将node_modules.tar.bz2 移动websocket目录解压即可
+  # tar xvf node_modules.tar.bz2 # 如果运行上面的install可以不解压提供的模块
+
+5.2 测试启动websocket 
+# cd /opt/jumpserver/websocket
+# node index.js
+
+六. 使用jumpserver
+见：  http://laoguang.blog.51cto.com/6013350/163670
+
+6.1 登陆
+账号密码: admin admin
+
+6.2 新建部门
+
+6.3 新建用户
+
+6.4 新建IDC
+
+6.5 添加主机
+
+6.6 建立用户组
+
+6.7 建立主机组
+
+6.8 将主机组授权给用户组
+
+6.9 授权sudo
+
+6.10 新建部门管理员
+
+6.11 授权主机给部门
+
+6.12 部门管理员登陆
+
+6.13 部门管理员添加用户和授权
+
+6.14 查看监控
+
+6.15 查看统计
+
+6.16 普通用户登录
+
+七. 收尾
+
+7.1 修改sshd配置，禁止密码登录
+# vim /etc/sshd/sshd_config
+  ...
+  PasswordAuthentication no
+  ...# service sshd restart
+
+7.2 让用户登录jumpserver自动运行系统
+# cd /opt/jumpserver/docs 
+# vim zzjumpserver.sh
+  ...
+  if [ $USER == 'guanghongwei' ];then   # 修改特殊用户，结束后不退出，便于维护
+  ...
+# cp zzjumpserver.sh /etc/profile.d/
+
+7.3 正常运行jumpserver系统
+# cd /opt/jumpserver/
+# ./service.sh start
+    #说明：如果想结束系统 ./service.sh stop ;
+    # 什么没有运行？ 那你有没有加执行权限？
+
+八. 生产注意情况
+
+8.1 每台服务器最好建立灾备用户，以防由于网络等情况连接不上ldap服务器导致影响维护
+
+8.2 ldap server建立主从或者镜像, 这部分内容已超出本话题
+客户端指定时需要写上两台的地址--ldapserver=192.168.20.130,192.168.20.xxx
+
+8.3 数据库备份或主从
+
+8.4 nginx + uwsgi + django 运行，上面的server.sh是开发模式，只能单并发
+</pre>
+<p>
+  <b>参考链接</b><br />
+  <a href="http://laoguang.blog.51cto.com/6013350/1636273" target="_blank">Centos 6.5 install and setup jumpserver</a>
+</p>
