@@ -1,0 +1,83 @@
+---
+layout: post
+title:  Ubuntu 14.04 install Vsftpd-3.0.2 and setup chrooot users
+description: Ubuntu 14.04 install Vsftpd-3.0.2 and setup chrooot users
+categories:  Server
+tags:  Server
+record_on: 2016-03-18
+---
+
+<p>介绍</p>
+
+<h3>1. 安装步骤</h3>
+<pre class="prettyprint lang-html">
+1:$ sudo apt-get update 
+
+2:$ sudo apt-get install vsftpd db-util
+
+3:$ sudo cp /etc/vsftpd.conf /etc/vsftpd.conf.bak
+
+4:$ sudo mkdir /etc/vsftpd # if necessary
+
+5:$ cd /etc/vsftpd/
+
+6:$ sudo vim vusers.txt 
+
+vivek
+vivekpass
+sayali
+sayalipass
+
+7:$ sudo db_load -T -t hash -f vusers.txt vsftpd-virtual-user.db
+
+8:$ sudo chmod 600 vsftpd-virtual-user.db # make it not global readbale
+
+9:$ sudo rm -rf vusers.txt
+
+10:$ sudo vim vsftpd.conf
+
+listen=YES          							#以独立模式运行
+anonymous_enable=NO							#不允许匿名用户
+local_enable=YES							#允许本地用户登陆
+dirmessage_enable=YES							#显示目录下的message消息
+use_localtime=YES							#使用本地时间
+xferlog_enable=YES							#启用日志
+connect_from_port_20=YES
+secure_chroot_dir=/var/run/vsftpd/empty
+rsa_cert_file=/etc/ssl/certs/ssl-cert-snakeoil.pem
+rsa_private_key_file=/etc/ssl/private/ssl-cert-snakeoil.key
+virtual_use_local_privs=YES
+write_enable=YES							#允许写入
+pam_service_name=vsftpd.virtual
+guest_enable=YES							#允许虚拟用户
+user_sub_token=$USER
+local_root=/home/vftp/$USER
+chroot_local_user=YES
+allow_writeable_chroot=YES
+hide_ids=YES
+
+11:$ sudo chmod 777 /var/log/vsftpd.log
+
+11:$  sudo vim /etc/pam.d/vsftpd.virtual
+#%PAM-1.0
+auth       required     pam_userdb.so db=/etc/vsftpd/vsftpd-virtual-user
+account    required     pam_userdb.so db=/etc/vsftpd/vsftpd-virtual-user
+session    required     pam_loginuid.so
+
+
+12:$ sudo mkdir -p /home/vftp/{vivek,sayali}
+
+13:$ sudo chown -R ftp:ftp /home/vftp
+
+14:$ sudo service vsftpd restart
+
+15:$ sudo netstats -ntlp
+
+
+</pre>
+
+
+<p>
+  <b>参考链接</b><br />
+  <a href="http://my.oschina.net/allman90/blog/294847" target="_blank">network setup on Centos system</a>
+</p>
