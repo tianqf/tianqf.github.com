@@ -3,6 +3,7 @@ layout: post
 title: Install and Setup Zabbix 
 description: Install and Setup Zabbix
 categories: Tools
+
 tags: Tools
 record_on: 2015-11-04
 ---
@@ -120,6 +121,22 @@ Hostname=Agent主机名
 sudo cp /opt/zabbix/conf/zabbix_agentd.conf /usr/local/etc/
  
 sudo /opt/zabbix/sbin/zabbix_agentd 
+
+
+邮件警告功能
+
+下面这个shell脚本可以简单实现发送报警邮件的功能，并将邮件发送的历史记录保存到日志中
+将下面脚本命名为send_email.sh，放到/usr/local/zabbix/share/zabbix/alertscripts目录，并赋予脚本可执行权限
+
+#! /bin/bash
+
+ient="$1" 
+subject="$2" 
+message="$3" 
+
+echo -e "$(date)\n调用脚本 $0 发送提示Email给 $recipient\n$3\n" >> /home/smart2/logs/send_email.log
+
+sendemail -s smtp.xx.xx.com -f 发件人@xx..com -t 收件人@xx.com  "$recipient" -u "$subject" -m "$message"  -xu 发件人@xxx.com  -xp  "密码"
 </pre>
 <b>参考链接</b><br />
 <a href="zabbix setup and install for ubuntu server 12.04" target="_blank">http://88fly.blog.163.com/blog/static/12268039020125933329445/</a>
