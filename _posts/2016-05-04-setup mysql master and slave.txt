@@ -22,17 +22,20 @@ record_on: 2016-05-04
 
 二：配置MySQL主服务器（192.168.21.169）
 1:# mysql  -uroot  -p    #进入MySQL控制台
+
 2:# create database test;   #建立数据库osyunweidb
+
 3:# insert into mysql.user(Host,User,Password) values('localhost','fooltest',password('123456'));   #创建用户fooltest
 建立MySQL主从数据库同步用户fooltest密码123456 
+
 4:# flush privileges;   #刷新系统授权表
 授权用户fooltest只能从192.168.21.168这个IP访问主服务器192.168.21.169上面的数据库，并且只具有数据库备份的权限
+
 5:# grant replication slave  on *.* to 'fooltest'@'192.168.21.168' identified by '123456' with grant option; 
 
 6:# sudo cp /etc/mysql/my.cnf /etc/mysql/my.cnf.bak
 
 7:# sudo vim /etc/mysql/my.cnf
-
 # 注释 bind-address
 # bind-address          = 127.0.0.1
 修改【mysqld】部分如下所示
@@ -46,7 +49,7 @@ binlog_ignore_db        = mysql
 5:重启mysql服务
 #sudo service mysql restart
 
-mysql -u root -p   #进入mysql控制台
+6:# mysql -u root -p   #进入mysql控制台
 show master status;  查看主服务器，出现以下类似信息
 +------------------+----------+--------------+------------------+
 | File                        | Position  | Binlog_Do_DB | Binlog_Ignore_DB |
@@ -56,6 +59,7 @@ show master status;  查看主服务器，出现以下类似信息
 1 row in set (0.00 sec)
 
 三：配置MySQL从服务器的my.cnf文件
+
 1:# sudo vim /etc/my.cnf   #编辑配置文件，在[mysqld]部分添加下面内容
 server-id               = 2
 log_bin                 = /var/log/mysql/mysql-bin.log
@@ -67,23 +71,35 @@ binlog_ignore_db        = mysql
 2:# sudo service mysql restart   #重启MySQL
 
 注意：MySQL 5.1.7版本之后，已经不支持把master配置属性写入my.cnf配置文件中了，只需要把同步的数据库和要忽略的数据库写入即可。
+
 3:# mysql  -u root -p  #进入MySQL控制台
+
 4:# slave stop;   #停止slave同步进程
+
 5:# change master to master_host='192.168.21.169',master_user='fooltest',master_password='123456',master_log_file='mysql-bin.000019' ,master_log_pos=7131;    #执行同步语句
+
 6:# slave start;    #开启slave同步进程
+
 7:# show slave status;   #查看slave同步信息
 | Waiting for master to send event | 192.168.88.226 | fooltest    |        3306 |            60 | mysql-bin.000001 |                 107 | mysqld-relay-bin.000002 |           253 | mysql-bin.000001      | Yes              | Yes               |                 |                     |                    |                        |                         |                             |          0 |            |            0 |                 7131|             410 | None            |                |             0 | No                 |                    |                    |                 |                   |                |                     0 | No                            |             0 |               |              0 |                |                             |                1 |
 
 以上这两个参数的值为Yes，即说明配置成功！
 
 四：测试MySQL主从服务器双机热备是否成功
+
 1、进入MySQL主服务器
+
 # mysql -u root -p  #进入主服务器MySQL控制台
+
 # use test;   #进入数据库
-CREATE TABLE test ( id int not null primary key,name char(20) );   #创建test表
+
+# CREATE TABLE test ( id int not null primary key,name char(20) );   #创建test表
 2、进入MySQL从服务器
+
 # mysql -u root -p  #进入MySQL控制台
+
 # use test;   #进入数据库
+
 # show  tables;  #查看osyunweidb表结构，会看到有一个新建的表test，表示数据库同步成功
 至此，MySQL数据库配置主从服务器实现双机热备实例教程完成
 
